@@ -1,22 +1,25 @@
-  clear('all');
+clc
+close all
+clear all
 
 %load Waypoints and State Constraint points
 load('Waypoints_new.mat')
-load('Constraints.mat')
+% load('Constraints.mat')
 
 % Define timestep
-TS = 0.2;
+Ts = 0.1;
 
 waypoints = [X; Y];
 
 %define initial heading angle
-heading = atan((Y(2)-Y(1)) / (X(2) - X(1)));
+% heading = atan((Y(2)-Y(1)) / (X(2) - X(1)));
 %define end target
 final = waypoints(:,end);
 
-%set initial localisation
-z0     = [X(1); Y(1); 0; heading];
-z      = z0;
+%set initial localization
+z0 = [X(1); Y(1); 0; zeros(9,1)]; % initial heigth of 0 for now
+% z0 = zeros(12,1);
+z  = z0;
 z_list = z;
 
 %set reference velocity
@@ -31,22 +34,22 @@ i = 0;
 while norm(z(1:2) - final) > 2
 	current_dis = vecnorm(waypoints-z(1:2), 2, 1);
 	current_idx = find(current_dis == min(current_dis));
-	goal_idx    = current_idx + 2;
+	goal_idx = current_idx + 2;
     
     % Define input constraints
-    umax = [ 3  pi/4]';
-    umin = [-3 -pi/4]';
+    umax = [100 100 100 100]';
+    umin = [0 0 0 0]';
     
     % Define goal state constraints (X,Y,V,Heading)
     goal = [waypoints(:, goal_idx); v_ref];
     disp(['Goal Index:', num2str(goal_idx)])
 
     % Define constraints
-    zMax = [ 1000  1000  8  2*pi]';
-    zMin = [-1500 -1500 -2  -2*pi]';
+    zMax = 10*ones(12,1);
+    zMin = -10*ones(12,1);
 
     disp(['Currently Solving for iter:', num2str(i)])
-    [feas, zOpt, uOpt, JOpt] = CFTOC(N, z0, goal, zMin, zMax, umin, umax, TS);
+    [feas, zOpt, uOpt, JOpt] = CFTOC(N, z0, goal, zMin, zMax, umin, umax, Ts);
     
     u = uOpt(:, 1);
     z = zOpt(:, 2);
@@ -57,36 +60,35 @@ while norm(z(1:2) - final) > 2
 end
 
 
-function [feas, zOpt, uOpt, JOpt] = CFTOC(N, z0, goal, zmin, zmax, umin, umax, TS)
+function [feas, zOpt, uOpt, JOpt] = CFTOC(N, z0, goal, zmin, zmax, umin, umax, Ts)
 
 	% Define state matrix
-	z = sdpvar(4,N+1);
-	% assign(z(:,1),z0);
+	z = sdpvar(12,N+1);
 
 	% Define input decision variables
-	u = sdpvar(2,N);
+	u = sdpvar(4,N);
 
 	%define objective function
 	objective=0;
 
 	for j=1:N
-		objective = objective + 5*(z(1, j) - goal(1))^2 + 5*(z(2, j) - goal(2))^2 + 1 * (z(3, j) - goal(3))^2;
-		objective = objective + 0.1 * u(1, j)^2 + 0.1 * u(2,j)^2;
+		objective = objective + (z(1, j) - goal(1))^2 + (z(2, j) - goal(2))^2; % removed velocity goal
+		objective = objective + u(1, j)^2 + u(2,j)^2;
     end  
 
 	%define state and input constraints
 	constraints = [];
 
 	for i = 1:N
-	    constraints = [constraints zmin<=z(:,i)<=zmax];
+% 	    constraints = [constraints zmin<=z(:,i)<=zmax];
 	    constraints = [constraints umin<=u(:,i)<=umax];
-	    constraints = [constraints z(:,i+1) == bikeFE(z(:,i),u(:,i))];
+	    constraints = [constraints z(:,i+1) == linearDynamicsQuadcopterDiscrete(z(:,i), u(1,i), u(2,i), u(3,i), u(4,i), Ts)];
 	    if i <= N-1
-	        constraints = [constraints -pi/10<=u(2,i+1)-u(2,i)<=pi/10];
+% 	        constraints = [constraints -pi/10<=u(2,i+1)-u(2,i)<=pi/10];
 	    end
 	end
 
-	constraints = [constraints z(:,1)==z0, zmin<=z(:,N+1)<=zmax];
+	constraints = [constraints z(:,1)==z0];%, zmin<=z(:,N+1)<=zmax];
 
 	% Set options for YALMIP and solver
 	options = sdpsettings('verbose', 0, 'solver', 'ipopt');
