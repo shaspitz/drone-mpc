@@ -1,7 +1,5 @@
 function [cSigma, n1, n2, n3] = mixerMatrix(cp1, cp2, cp3, cp4)
 
-% hi, anthony was here
-
 [Jxx, Jzz, m, l, k] = quadcopterParameters();
 
 mixer =   [ 1,  1,  1,  1;
