@@ -101,8 +101,8 @@ quadcopter_width=2;
 objective=0;
 
 for j=1:N
-    objective = objective + (z(1, j) - zN(1,j))^2 + (z(2, j) - zN(2,j))^2; % removed velocity goal
-    objective = objective + u(1,j)^2 + u(2,j)^2;
+    objective = objective + (z(j, 1) - zN(1,j))^2 + (z(j, 2) - zN(2,j))^2; % removed velocity goal
+    objective = objective + u(1)^2 + u(2)^2;
 end
 
 %define state and input constraints
@@ -111,7 +111,7 @@ constraints = [];
 for i = 1:N
     % 	    constraints = [constraints zmin<=z(:,i)<=zmax];
     %find the absolute value of the current position from the reference
-    dist_ref=abs((z(1,i)-zN(1,i))^2+(z(2,i)-zN(2,i))^2+(z(3,i)-zN(3,i))^2);
+    dist_ref=abs((z(i,1)-zN(i,1))^2+(z(2,i)-zN(2,i))^2+(z(3,i)-zN(3,i))^2);
     constraints=[constraints (dist_ref+buff+quadcopter_width/2)<=lane_width/2];
     constraints = [constraints umin<=u(:,i)<=umax];
     constraints = [constraints z(:,i+1) == linearDynamicsQuadcopterDiscrete(z(:,i), u(1,i), u(2,i), u(3,i), u(4,i), Ts)];
