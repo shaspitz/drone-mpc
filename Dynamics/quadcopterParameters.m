@@ -1,12 +1,12 @@
 function [Jxx, Jzz, m, l, k] = quadcopterParameters()
 
 % Quadcopter physical parameters
-r = 0.2;        % radial distance of propeller from COM
+r = 3;          % radial distance of propeller from COM
 l = r/sqrt(2);
-mB = 1;         % Mass of the electronics/battery/ect located at the COM
-mM = 0.1;       % Mass of the motors
+mB = 600;       % Mass of the electronics/battery/ect located at the COM
+mM = 50;        % Mass of the motors
 m = mB + 4*mM;  % Total mass of the quadcopter
-k = 5;          % Proportionality constant
+k = 0.01;       % Proportionality constant
 
 % Locations of the motors in the body fixed frame
 s1 = [l; l; 0];
