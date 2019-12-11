@@ -89,6 +89,7 @@ for M=1:1000
     i = i + 1;
 end
 
+traj_plot(z_list)
 
 function [feas, zOpt, uOpt, JOpt] = CFTOC(N, z0, zN, zmin, zmax, umin, umax, Ts)
 
