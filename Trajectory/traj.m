@@ -1,6 +1,6 @@
-%%
+%% Trajectory
 % This scripts generates the interpolated data for the reference trajectory
-%
+close all; clc;
 
 WP =...
     [0 0 0;
@@ -23,7 +23,12 @@ WP =...
 temp = cat(1,0,cumsum(sqrt(sum(diff(WP,[],1).^2,2))));
 dd = interp1(temp, WP, unique([temp(:)' linspace(0,temp(end),200)]),'cubic');
 
-figure, hold on
-plot3(WP(:,1),WP(:,2),WP(:,3),'.b-')
-plot3(dd(:,1),dd(:,2),dd(:,3),'.r-')
-axis image, view(3), legend({'Original','Interp. Spline'})
+% figure, hold on
+% plot3(WP(:,1),WP(:,2),WP(:,3),'.b-')
+% plot3(dd(:,1),dd(:,2),dd(:,3),'.r-')
+% <<<<<<< HEAD
+% =======
+% grid on
+% title('Quadcopter Trajectoy')
+% >>>>>>> 52de72b5279bea4a0730660613ff7f8a430a3545
+% axis image, view(3), legend({'Original','Interp. Spline'})
