@@ -21,9 +21,9 @@ WP =...
    -10 25 25;
      0  0 0];
 temp = cat(1,0,cumsum(sqrt(sum(diff(WP,[],1).^2,2))));
-interpWP = interp1(temp, WP, unique([temp(:)' linspace(0,temp(end),200)]),'cubic');
+dd = interp1(temp, WP, unique([temp(:)' linspace(0,temp(end),200)]),'cubic');
 
-% figure, hold on
-% plot3(WP(:,1),WP(:,2),WP(:,3),'.b-')
-% plot3(dd(:,1),dd(:,2),dd(:,3),'.r-')
-% axis image, view(3), legend({'Original','Interp. Spline'})
+figure, hold on
+plot3(WP(:,1),WP(:,2),WP(:,3),'.b-')
+plot3(dd(:,1),dd(:,2),dd(:,3),'.r-')
+axis image, view(3), legend({'Original','Interp. Spline'})
