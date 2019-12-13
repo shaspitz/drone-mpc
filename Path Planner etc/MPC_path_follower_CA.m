@@ -11,7 +11,7 @@ Z=circlewaypoints(:,3);
 
 % load('Constraints.mat')
 % Define timestep
-Ts = 0.1;
+Ts = 1;
 
 waypoints = [X,Y,Z]';
 
@@ -21,7 +21,7 @@ waypoints = [X,Y,Z]';
 final = waypoints(:,end);
 
 %set initial localization
-z0 = [X(1); Y(1); Z(1); zeros(9,1)]; % initial heigth of 0 for now
+z0 = [X(1); Y(1); Z(1); zeros(14,1)]; % initial heigth of 0 for now
 % z0 = zeros(12,1);
 z  = z0;
 z_list = z;
@@ -30,17 +30,17 @@ z_list = z;
 % v_ref = 5;
 
 % Define horizon
-N = 1000;
+N = 10;
 i = 0;
 
 %while the model has not reached within a certain tolerance of the end
 %point
 %while norm(z(1:3) - final) > 2
-for M=1:2
+for M=1:20
     current_dis = vecnorm(waypoints-z(1:3), 2,1);
 %     current_idx = find(current_dis == min(current_dis));
     [val,current_idx] = min(current_dis);
-    goal_idx = current_idx + 5;
+    goal_idx = current_idx + 1;
 %     dist=z0(3)*Ts;
 %     x_pos=z0(1)+cos(z0(4))*dist;
 %     y_pos=z0(2)+sin(z0(4))*dist;
@@ -84,19 +84,25 @@ for M=1:2
     [feas, zOpt, uOpt, JOpt] = CFTOC(N, z0, goal, zMin, zMax, umin, umax, Ts);
     
     u = uOpt(:, 1);
-    z = zOpt(:, 2);
+%     z = zOpt(:, 2);
+    
+    z = curvilinearDynamicsQuadcopterDiscrete(z0, u(1), u(2), u(3), u(4), Ts);
     z_list = [z_list z];
     z0 = z;
     
     i = i + 1;
 end
 
-traj_plot(z_list)
+plot3(circlewaypoints(:,1),circlewaypoints(:,2),circlewaypoints(:,3),'.r-')
+hold on
+plot3(z_list(1,:),z_list(2,:),z_list(3,:), 'b', 'linewidth', 20)
+
+% traj_plot(z_list)
 
 function [feas, zOpt, uOpt, JOpt] = CFTOC(N, z0, zN, zmin, zmax, umin, umax, Ts)
 
 % Define state matrix
-z = sdpvar(14,N+1);
+z = sdpvar(17,N+1);
 
 % Define input decision variables
 u = sdpvar(4,N);
@@ -107,29 +113,31 @@ u = sdpvar(4,N);
 % quadcopter_width=2;
 
 P = eye(3);
-Q = eye(3);
-R = 10*eye(4);
+Q = 10*eye(3);
+R = eye(4);
 
 %define objective function
 objective=0;
 
-% objective = (z(1:3,N+1) - zN(1:3))'*P*(z(1:3,N+1) - zN(1:3));
+objective = (z(1:3,N+1) - zN(1:3))'*P*(z(1:3,N+1) - zN(1:3));
 % objective = (z(2:3,N+1))'*P*(z(2:3,N+1));
 for j=1:N
-%     objective = objective + (z(1:3,j) - zN(1:3))'*Q*(z(1:3,j) - zN(1:3)); % removed velocity goal
+    objective = objective + (z(1:3,j) - zN(1:3))'*Q*(z(1:3,j) - zN(1:3)); % removed velocity goal
     objective = objective + u(:,j)'*R*u(:,j);
 end
 
 %define state and input constraints
 constraints = [];
-constraints = [constraints z(:,1)==zeros(14,1)];
+constraints = [constraints z(:,1)==z0];
 for i = 1:N
     % 	    constraints = [constraints zmin<=z(:,i)<=zmax];
 %     %find the absolute value of the current position from the reference
 %     dist_ref=abs((z(1,i)-zN(1,i))^2+(z(2,i)-zN(2,i))^2+(z(3,i)-zN(3,i))^2);
 %     constraints=[constraints (dist_ref+buff+quadcopter_width/2)<=lane_width/2];
     constraints = [constraints umin<=u(:,i)<=umax];
+%     temp = curvilinearDynamicsQuadcopterDiscrete(z(:,i), u(1,i), u(2,i), u(3,i), u(4,i), Ts);
     constraints = [constraints z(:,i+1) == curvilinearDynamicsQuadcopterDiscrete(z(:,i), u(1,i), u(2,i), u(3,i), u(4,i), Ts)];
+%     constraints = [constraints z(1:12,i+1) == temp(1:12)];
 %     if i <= N-1
 %         % 	        constraints = [constraints -pi/10<=u(2,i+1)-u(2,i)<=pi/10];
 %     end
@@ -137,10 +145,10 @@ end
 for k=1:N+1
     constraints=[constraints zmin(1:2)<=z(7:8,k)<=zmax(1:2) zmin(3:4)<=z(10:11,k)<=zmax(3:4)];
 end
-constraints=[constraints z(2:3,N+1) <= [1;1]];
+constraints=[constraints z(1:3,N+1) == zN];
 
 % Set options for YALMIP and solver
-options = sdpsettings('verbose', 0, 'solver', 'quadprog');
+options = sdpsettings('verbose', 0, 'solver', 'IPOPT');
 % Solve
 sol = optimize(constraints, objective, options);
 if sol.problem == 0

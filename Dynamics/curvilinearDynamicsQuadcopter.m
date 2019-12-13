@@ -9,9 +9,9 @@ function [dx] = curvilinearDynamicsQuadcopter(x, cp1, cp2, cp3, cp4)
 % Output dx is the first derivative of the current state vector
 % Unraveling the input state vector
 
-s = x(1);         % Position on reference curve       
-dy = x(2);        % Vertical distance from S to COM
-dz = x(3);        % Horizontal distance from S to COM
+s1 = x(1);         % Position on reference curve       
+s2 = x(2);        % Vertical distance from S to COM
+s3 = x(3);        % Horizontal distance from S to COM
 
 % Velocity of the quadcopter’s COM relative to the earth-fixed frame, expressed in
 % the earth-fixed coordinate system
@@ -33,8 +33,13 @@ p = x(10);        % roll rate
 q = x(11);        % pitch rate
 r = x(12);        % yaw rate
 
-ed = x(13);       % Direction angle error
-ei = x(14);       % Inclination angle error
+
+s  = x(13);         % Position on reference curve       
+dy = x(14);        % Vertical distance from S to COM
+dz = x(15);        % Horizontal distance from S to COM
+
+ed = x(16);       % Direction angle error
+ei = x(17);       % Inclination angle error
 
 % Get necessary parameters
 [Jxx, Jzz, m, l, k] = quadcopterParameters();
@@ -42,14 +47,13 @@ ei = x(14);       % Inclination angle error
 g = 9.81;
 deltacSigma = cSigma - m*g;
 V = sqrt(v1^2 + v2^2 + v3^2);
-r = 32187; % in meters
-c   = 1/r;
+rad = 32187; % in meters
+c   = 1/rad;
 tau = 0;
 
-% Derivative of position is velocity
-ds  = V*cos(ed)*cos(ei)/(1-c*dy);
-ddy = V*sin(ed)*cos(ei) + tau*dz*ds;
-ddz = -V*sin(ei) - tau*dy*ds;
+ds1 = v1;
+ds2 = v2;
+ds3 = v3;
 
 % Derivative of velocity
 dv1 = theta * g;
@@ -66,14 +70,19 @@ dp = n1/Jxx;
 dq = n2/Jxx;
 dr = n3/Jzz;
 
+% Derivative of position is velocity
+ds  = V*cos(ed)*cos(ei)/(1-c*dy);
+ddy = V*sin(ed)*cos(ei) + tau*dz*ds;
+ddz = -V*sin(ei) - tau*dy*ds;
+
 % Derivative of Direction angle error and Inclination angle error
 ded = r/cos(ei) - tau*ds*tan(ei)*cos(ed) - c*ds;
 dei = tau*ds*sin(ed) + q;
 
 % Pack into state derivative vector
-dx = [ds;
-      ddy;
-      ddz;
+dx = [ds1;
+      ds2;
+      ds3;
       dv1;
       dv2;
       dv3;
@@ -83,6 +92,9 @@ dx = [ds;
       dp;
       dq;
       dr;
+      ds;
+      ddy;
+      ddz;
       ded;
       dei];
   
