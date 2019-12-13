@@ -1,6 +1,6 @@
 %% Trajectory
 % This scripts generates the interpolated data for the reference trajectory
-close all; clc;
+close all; clc; clear all;
 
 % 32187 is 20mi
 r.x = 32187;
@@ -11,6 +11,7 @@ theta = linspace(0,2*pi,360);
 x = r.x*cos(theta);
 y = r.y*sin(theta);
 z = r.z*sin(theta);
+circlewaypoints = [x',y',z'];
 plot3(x,y,z)
 grid on
 axis square

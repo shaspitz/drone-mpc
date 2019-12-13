@@ -42,8 +42,9 @@ ei = x(14);       % Inclination angle error
 g = 9.81;
 deltacSigma = cSigma - m*g;
 V = sqrt(v1^2 + v2^2 + v3^2);
-% c   = ???
-% tau = ???
+r = 32187; % in meters
+c   = 1/r;
+tau = 0;
 
 % Derivative of position is velocity
 ds  = V*cos(ed)*cos(ei)/(1-c*dy);
