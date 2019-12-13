@@ -2,11 +2,12 @@
 % This scripts generates the interpolated data for the reference trajectory
 close all; clc;
 
-r.x = 10;
-r.y = 1;
-r.z = 1;
+% 32187 is 20mi
+r.x = 32187;
+r.y = 32187;
+r.z = 32187;
 
-theta = linspace(0,2*pi,100);
+theta = linspace(0,2*pi,360);
 x = r.x*cos(theta);
 y = r.y*sin(theta);
 z = r.z*sin(theta);
