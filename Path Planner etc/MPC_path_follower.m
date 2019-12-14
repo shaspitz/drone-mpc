@@ -4,7 +4,7 @@ clear all
 
 %load Waypoints and State Constraint points
 % load('WayP.mat')
-load('waypointsBigger.mat');
+load('wpx8.mat');
 X=dd(:,1);
 Y=dd(:,2);
 Z=dd(:,3);
@@ -32,22 +32,28 @@ end
 final = waypoints(:,end);
 
 %set initial localization
-z0 = [X(1); Y(1); Z(1); zeros(9,1)]; % initial heigth of 0 for now
+% z0 = [X(1); Y(1); Z(1); zeros(9,1)]; % initial heigth of 0 for now
+z0 = [106;-8.44148154647791e-13;103.654672318360;0.0914521204373255;-6.59114957604132e-15;0.597948519860958;-5.67206472330936e-16;0.00468637882237349;-1.11564403548758e-17;2.86911200224211e-16;-0.0266458223109201;-3.25260651745651e-19];
 % z0 = zeros(12,1);
 z  = z0;
 z_list = z;
+u_list = [];
 
 % set reference velocity
 v_ref = 2;
 
 % Define horizon
-N = 50;
+N = 20;
 i = 0;
+
+% Initialize idx
+current_idx = 1;
+goal_idx = 1;
 
 %while the model has not reached within a certain tolerance of the end
 %point
 %while norm(z(1:3) - final) > 2
-for M=1:200
+for M=1:1000
     
     %     dist=z0(3)*Ts;
     %     x_pos=z0(1)+cos(z0(4))*dist;
@@ -63,15 +69,15 @@ for M=1:200
     % Define input constraints (force of each propeller)
     
     current_dis = vecnorm(waypoints-z(1:3), 2,1);
-    current_idx = find(current_dis == min(current_dis));
-%     vec_angle_xy=atan((Y(current_idx)-z0(2))/(X(current_idx)-z0(1)));
-%     vec_angle_xz=atan((Z(current_idx)-z0(3))/(X(current_idx)-z0(1)));
-%     if abs(vec_angle_xy-angle)<pi/2 && abs(vec_angle_xz-angle)<pi/2
+    last_current_idx = current_idx;
+%     current_idx = find(current_dis == min(current_dis));
+    [val,current_idx] = min(current_dis);
+    
+    if current_idx >= last_current_idx
         [val,current_idx] = min(current_dis);
-%     else
-%         current_idx=current_idx+1;
-%         
-%     end
+    else
+        current_idx = last_current_idx + 1;
+    end
     %     goal_idx = current_idx + 5;
     
     umax = [9000 9000 9000 9000]';
@@ -94,7 +100,11 @@ for M=1:200
         k = k + 1;
     end
     
+    last_goal_idx = goal_idx;
     goal_idx = current_idx + k;
+    if (goal_idx < last_goal_idx)
+        goal_idx = last_goal_idx;
+    end
     
     % Define goal state constraints (X,Y,V,Heading)
     current = [waypoints(:, current_idx)];
@@ -146,6 +156,7 @@ for M=1:200
     u = uOpt(:, 1);
     z = zOpt(:, 2);
     z_list = [z_list z];
+    u_list = [u_list u];
     z0 = z;
     
     i = i + 1;
@@ -189,9 +200,9 @@ for i = 1:N
     %find the absolute value of the current position from the reference
     %     dist_ref = abs((z(1,i)-zN(1,i))^2+(z(2,i)-zN(2,i))^2+(z(3,i)-zN(3,i))^2);
     %     constraints = [constraints (dist_ref+buff+quadcopter_width/2) <= (lane_width/2) ];
-    constraints = [constraints, ( z(1,i)-zN(1,i) + buff + quadcopter_width/2 ) <= tube_radius, -1*( z(1,i)-zN(1,i) + buff + quadcopter_width/2 ) <= tube_radius];
-    constraints = [constraints, ( z(2,i)-zN(2,i) + buff + quadcopter_width/2 ) <= tube_radius, -1*( z(2,i)-zN(2,i) + buff + quadcopter_width/2 ) <= tube_radius];
-    constraints = [constraints, ( z(3,i)-zN(3,i) + buff + quadcopter_width/2 ) <= tube_radius, -1*( z(3,i)-zN(3,i) + buff + quadcopter_width/2 ) <= tube_radius];
+    constraints = [constraints, (-tube_radius+buff+quadcopter_width/2)<=( z(1,i)-zN(1,i)) <= (tube_radius- buff - quadcopter_width/2)];
+    constraints = [constraints, (-tube_radius+buff+quadcopter_width/2)<=( z(2,i)-zN(2,i)) <= (tube_radius- buff - quadcopter_width/2)];
+    constraints = [constraints, (-tube_radius+buff+quadcopter_width/2)<=( z(3,i)-zN(3,i)) <= (tube_radius- buff - quadcopter_width/2)];
     
     constraints = [constraints umin<=u(:,i)<=umax];
     constraints = [constraints z(:,i+1) == linearDynamicsQuadcopterDiscrete(z(:,i), u(1,i), u(2,i), u(3,i), u(4,i), Ts)];

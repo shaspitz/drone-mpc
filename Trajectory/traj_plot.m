@@ -21,9 +21,9 @@ WP =...
 %    -10 40 50;
 %    -10 25 25;
 %      0  0 0];
- WP = 10*WP;
+ WP = 4*WP;
 temp = cat(1,0,cumsum(sqrt(sum(diff(WP,[],1).^2,2))));
-dd = interp1(temp, WP, unique([temp(:)' linspace(0,temp(end),2000)]),'cubic');
+dd = interp1(temp, WP, unique([temp(:)' linspace(0,temp(end),800)]),'cubic');
 
 figure, hold on
 % plot3(WP(:,1),WP(:,2),WP(:,3),'.b-')
