@@ -4,7 +4,8 @@ clear all
 
 %load Waypoints and State Constraint points
 % load('WayP.mat')
-load('wpx8.mat');
+% load('wpx8.mat');
+load('WayP.mat');
 X=dd(:,1);
 Y=dd(:,2);
 Z=dd(:,3);
@@ -163,7 +164,7 @@ for M=1:1000
 end
 
 if feas ~= 0
-    traj_plot(z_list);
+    traj_plot(z_list, dd);
 end
 
 function [feas, zOpt, uOpt, JOpt] = CFTOC(N, z0, zN, zmin, zmax, umin, umax, Ts)
