@@ -19,22 +19,29 @@ for i = 1:size(waypoints,2)-1
     normVec(i) = norm(waypoints(:,i+1) - waypoints(:,i));
 end
 
+% Change this to test certain parts of the path
+Start_point = 1;
+
+% Change this to set initial velocities
+Start_vel = [0; 0; 0]; %vx, vy, vz
+
 %set initial localization
 z = zeros(12,1);
-z(1:3) = dd(1,:);
+z(1:3) = dd(Start_point,:);
+z(4:6) = Start_vel;
 z_list = z;
 u_list = [];
 
 % set reference velocity
-v_ref = 100;
+v_ref = 50;
 
 % Define horizon
-N = 25;
+N = 35;
 i = 0;
 
 % Initialize idx
-current_idx = 1;
-goal_idx = 2;
+current_idx = Start_point;
+goal_idx = Start_point + 1;
 
 dist_trav_des = 0;
 
@@ -110,7 +117,7 @@ buff = 0;
 tube_radius = 50;
 quadcopter_width = 2;
 
-P = 5*eye(3);
+P = eye(3);
 Q = 10*eye(3);
 R = eye(4);
 VEL_weight = 100*eye(3);
@@ -120,7 +127,7 @@ objective=0;
 
 objective = (z(1:3,N+1) - zN(1:3,N))'*P*(z(1:3,N+1) - zN(1:3,N));
 for j=1:N
-    objective = objective + (z(1:3,j) - zN(1:3,N))'*Q*(z(1:3,j) - zN(1:3,N)) - z(4:6,j)'*VEL_weight*z(4:6,j); % removed velocity goal
+    objective = objective + (z(1:3,j) - zN(1:3,N))'*Q*(z(1:3,j) - zN(1:3,N)) - z(4:6,j)'*VEL_weight*z(4:6,j);
     objective = objective + u(:,j)'*R*u(:,j);
 end
 
@@ -136,7 +143,7 @@ for i = 1:N
     constraints = [constraints z(:,i+1) == linearDynamicsQuadcopterDiscrete(z(:,i), u(1,i), u(2,i), u(3,i), u(4,i), Ts)];
 end
 for k=1:N+1
-    constraints=[constraints zmin(1:2)<=z(7:8,k)<=zmax(1:2) zmin(3:4)<=z(10:11,k)<=zmax(3:4)];
+%     constraints=[constraints zmin(1:2)<=z(7:8,k)<=zmax(1:2) zmin(3:4)<=z(10:11,k)<=zmax(3:4)];
 end
 constraints=[constraints z(1:3,N+1) == zN(1:3,N)];
 

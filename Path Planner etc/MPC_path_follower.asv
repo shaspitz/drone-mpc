@@ -19,22 +19,31 @@ for i = 1:size(waypoints,2)-1
     normVec(i) = norm(waypoints(:,i+1) - waypoints(:,i));
 end
 
+% Change this to test certain parts of the path
+Start_point = 160;
+
+% Change this to set initial velocities
+Start_vel = [0; 0; 0]; %vx, vy, vz
+
 %set initial localization
 z = zeros(12,1);
-z(1:3) = dd(1,:);
+z(1:3) = dd(Start_point,:);
+z(4:6) = dd(Start_vel,:);
 z_list = z;
 u_list = [];
 
 % set reference velocity
-v_ref = 5;
+v_ref = 50;
 
 % Define horizon
-N = 50;
+N = 35;
 i = 0;
 
 % Initialize idx
-current_idx = 1;
-goal_idx = 2;
+current_idx = Start_point;
+goal_idx = Start_point + 1;
+
+dist_trav_des = 0;
 
 %%
 for M=1:1000
@@ -44,46 +53,51 @@ current_dis = vecnorm(waypoints-z(1:3), 2,1);
 
 umax = [9000 9000 9000 9000]';
 umin = [0 0 0 0]';
-    
-goal_idx = v_ref*N*Ts;
 
+% Define goal state constraints 
 current = [waypoints(:, current_idx)];
 goal = [waypoints(:, goal_idx)];
 disp(['Goal Index:', num2str(goal_idx)])
+
+[pointsInterp] = Ninterp(waypoints, current_idx, goal_idx, v_ref, Ts, N);
+
+x_interp = pointsInterp(:,1);
+y_interp = pointsInterp(:,2);
+z_interp = pointsInterp(:,3);
+
+zN = [];
+for k=1:N
+    zN(:,k) = [x_interp(k); y_interp(k); z_interp(k);  v_ref];
+end
     
-%     [pointsInterp] = Ninterp(waypoints, current_idx, goal_idx, vCur, Ts, N);
-%     
-%     x_interp=[];
-%     y_interp=[];
-%     z_interp=[];
-%     
-%     x_interp = pointsInterp(:,1);
-%     y_interp = pointsInterp(:,2);
-%     z_interp = pointsInterp(:,3);
+% Define constraints on roll, pitch, and roll, pitch derivatives (not currently defining
+% constraint for velocity)
+zMax = [15 15 10 10]';
+zMin = [-15 -15 -10 -10]';
+
+disp(['Currently Solving for iter:', num2str(i)])
+[feas, zOpt, uOpt, JOpt] = CFTOC(N, z, zN, zMin, zMax, umin, umax, Ts);
+if feas == 0
+    disp("ERROR IN YALMIP CFTOC");
+    break;
+end
     
-%     zN = [];
-%     for k=1:N
-%         zN(:,k) = [x_interp(k); y_interp(k); z_interp(k);  vCur];
-%     end
-    
-    % Define constraints on roll, pitch, and roll, pitch derivatives (not currently defining
-    % constraint for velocity)
-    zMax = [15 15 10 10]';
-    zMin = [-15 -15 -10 -10]';
-    
-    disp(['Currently Solving for iter:', num2str(i)])
-    [feas, zOpt, uOpt, JOpt] = CFTOC(N, z, zN, zMin, zMax, umin, umax, Ts);
-    if feas == 0
-        disp("ERROR IN YALMIP CFTOC");
-        break;
-    end
-    
-    u = uOpt(:, 1);
-    z = zOpt(:, 2);
-    z_list = [z_list z];
-    u_list = [u_list u];
-    
-    i = i + 1;
+u = uOpt(:, 1);
+z = zOpt(:, 2);
+z_list = [z_list z];
+u_list = [u_list u];
+
+i = i + 1;
+
+% propogate goal_idx
+dist_trav_des = dist_trav_des + v_ref*Ts;
+wp_dist = norm(waypoints(:, goal_idx-1) - waypoints(:, goal_idx));
+
+if dist_trav_des > wp_dist 
+    goal_idx = goal_idx + 1;
+    dist_trav_des = 0;
+end
+
 end
 
 if feas ~= 0
@@ -103,7 +117,7 @@ buff = 0;
 tube_radius = 50;
 quadcopter_width = 2;
 
-P = 5*eye(3);
+P = eye(3);
 Q = 10*eye(3);
 R = eye(4);
 VEL_weight = 100*eye(3);
@@ -113,7 +127,7 @@ objective=0;
 
 objective = (z(1:3,N+1) - zN(1:3,N))'*P*(z(1:3,N+1) - zN(1:3,N));
 for j=1:N
-    objective = objective + (z(1:3,j) - zN(1:3,N))'*Q*(z(1:3,j) - zN(1:3,N)) - z(4:6,j)'*VEL_weight*z(4:6,j); % removed velocity goal
+    objective = objective + (z(1:3,j) - zN(1:3,N))'*Q*(z(1:3,j) - zN(1:3,N)) - z(4:6,j)'*VEL_weight*z(4:6,j);
     objective = objective + u(:,j)'*R*u(:,j);
 end
 
@@ -121,22 +135,15 @@ end
 constraints = [];
 constraints = [constraints z(:,1)==z0];
 for i = 1:N
-    %     	    constraints = [constraints zmin<=z(:,i)<=zmax];
-    %find the absolute value of the current position from the reference
-    %     dist_ref = abs((z(1,i)-zN(1,i))^2+(z(2,i)-zN(2,i))^2+(z(3,i)-zN(3,i))^2);
-    %     constraints = [constraints (dist_ref+buff+quadcopter_width/2) <= (lane_width/2) ];
     constraints = [constraints, (-tube_radius+buff+quadcopter_width/2)<=( z(1,i)-zN(1,i)) <= (tube_radius- buff - quadcopter_width/2)];
     constraints = [constraints, (-tube_radius+buff+quadcopter_width/2)<=( z(2,i)-zN(2,i)) <= (tube_radius- buff - quadcopter_width/2)];
     constraints = [constraints, (-tube_radius+buff+quadcopter_width/2)<=( z(3,i)-zN(3,i)) <= (tube_radius- buff - quadcopter_width/2)];
     
     constraints = [constraints umin<=u(:,i)<=umax];
     constraints = [constraints z(:,i+1) == linearDynamicsQuadcopterDiscrete(z(:,i), u(1,i), u(2,i), u(3,i), u(4,i), Ts)];
-    %     if i <= N-1
-    %         % 	        constraints = [constraints -pi/10<=u(2,i+1)-u(2,i)<=pi/10];
-    %     end
 end
 for k=1:N+1
-    constraints=[constraints zmin(1:2)<=z(7:8,k)<=zmax(1:2) zmin(3:4)<=z(10:11,k)<=zmax(3:4)];
+%     constraints=[constraints zmin(1:2)<=z(7:8,k)<=zmax(1:2) zmin(3:4)<=z(10:11,k)<=zmax(3:4)];
 end
 constraints=[constraints z(1:3,N+1) == zN(1:3,N)];
 
@@ -163,7 +170,7 @@ function [dd] = Ninterp(waypoints, current_idx, goal_idx, vCur, Ts, N)
 WP = waypoints(:,current_idx:goal_idx)';
 
 temp = cat(1,0,cumsum(sqrt(sum(diff(WP,[],1).^2,2))));
-dd = interp1(temp, WP, unique([temp(:)' linspace(0,temp(end),N)]),'cubic');
+dd = interp1(temp, WP, unique([temp(:)' linspace(0,temp(end),N)]),'PCHIP');
 
 end
 
