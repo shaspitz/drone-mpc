@@ -3,19 +3,11 @@ close all
 clear all
 
 %load Waypoints and State Constraint points
-% load('WayP.mat')
-% load('wpx8.mat');
 load('WP_map.mat');
 X=dd(:,1);
 Y=dd(:,2);
 Z=dd(:,3);
 
-% load('circleWP.mat');
-% X=circlewaypoints(:,1);
-% Y=circlewaypoints(:,2);
-% Z=circlewaypoints(:,3);
-
-% load('Constraints.mat')
 % Define timestep
 Ts = 0.1;
 
@@ -27,121 +19,52 @@ for i = 1:size(waypoints,2)-1
     normVec(i) = norm(waypoints(:,i+1) - waypoints(:,i));
 end
 
-%define initial heading angle
-% heading = atan((Y(2)-Y(1)) / (X(2) - X(1)));
-%define end target
-final = waypoints(:,end);
-
 %set initial localization
-% z0 = [X(1); Y(1); Z(1); zeros(9,1)]; % initial heigth of 0 for now
-% z0 = [106;-8.44148154647791e-13;103.654672318360;0.0914521204373255;-6.59114957604132e-15;0.597948519860958;-5.67206472330936e-16;0.00468637882237349;-1.11564403548758e-17;2.86911200224211e-16;-0.0266458223109201;-3.25260651745651e-19];
-z0 = zeros(12,1);
-z0(1:3) = dd(1,:);
-z  = z0;
+z = zeros(12,1);
+z(1:3) = dd(1,:);
 z_list = z;
 u_list = [];
 
 % set reference velocity
-v_ref = 2;
+v_ref = 5;
 
 % Define horizon
-N = 20;
+N = 50;
 i = 0;
 
 % Initialize idx
 current_idx = 1;
-goal_idx = 1;
+goal_idx = 2;
 
-%while the model has not reached within a certain tolerance of the end
-%point
-%while norm(z(1:3) - final) > 2
+%%
 for M=1:1000
     
-    %     dist=z0(3)*Ts;
-    %     x_pos=z0(1)+cos(z0(4))*dist;
-    %     y_pos=z0(2)+sin(z0(4))*dist;
-    %     for i =current_idx+1:length(waypoints)
-    %         x=waypoints(1,i);
-    %         y=waypoints(2,i);
-    %         if x>x_pos && y>y_pos
-    %             goal_idx=current_idx+i;
-    %             break
-    %         end
-    %     end
-    % Define input constraints (force of each propeller)
+current_dis = vecnorm(waypoints-z(1:3), 2,1);
+[val,current_idx] = min(current_dis);
+
+umax = [9000 9000 9000 9000]';
+umin = [0 0 0 0]';
     
-    current_dis = vecnorm(waypoints-z(1:3), 2,1);
-    last_current_idx = current_idx;
-%     current_idx = find(current_dis == min(current_dis));
-%     [val,current_idx] = min(current_dis);
+goal_idx = v_ref*N*Ts;
+
+current = [waypoints(:, current_idx)];
+goal = [waypoints(:, goal_idx)];
+disp(['Goal Index:', num2str(goal_idx)])
     
-    if current_idx >= last_current_idx
-        [val,current_idx] = min(current_dis);
-    else
-        current_idx = last_current_idx + 1;
-    end
-    %     goal_idx = current_idx + 5;
+%     [pointsInterp] = Ninterp(waypoints, current_idx, goal_idx, vCur, Ts, N);
+%     
+%     x_interp=[];
+%     y_interp=[];
+%     z_interp=[];
+%     
+%     x_interp = pointsInterp(:,1);
+%     y_interp = pointsInterp(:,2);
+%     z_interp = pointsInterp(:,3);
     
-    umax = [9000 9000 9000 9000]';
-    umin = [0 0 0 0]';
-    
-    % Grab currenct velocity
-    if M == 1
-        vCur = v_ref;
-    else
-        vCur = z0(4:6);
-    end
-    
-    % Find distance traveled in N time steps
-    distInN = norm(vCur)*N*Ts;
-    
-    k = 0;
-    distance2goal = 0;
-    while (distance2goal < distInN)
-        distance2goal = distance2goal + normVec(current_idx + k);
-        k = k + 1;
-    end
-    
-    last_goal_idx = goal_idx;
-    goal_idx = current_idx + k;
-    if (goal_idx < last_goal_idx)
-        goal_idx = last_goal_idx;
-    end
-    
-    % Define goal state constraints (X,Y,V,Heading)
-    current = [waypoints(:, current_idx)];
-    goal = [waypoints(:, goal_idx)];
-    disp(['Goal Index:', num2str(goal_idx)])
-    
-    [pointsInterp] = Ninterp(waypoints, current_idx, goal_idx, vCur, Ts, N);
-    
-    x_interp=[];
-    y_interp=[];
-    z_interp=[];
-    
-    x_interp = pointsInterp(:,1);
-    y_interp = pointsInterp(:,2);
-    z_interp = pointsInterp(:,3);
-    
-    %     %calculate distance between points
-    %     delta=v_ref*Ts;
-    
-    %     %calculate next n-points to interpolate
-    %     x_interp=[];
-    %     y_interp=[];
-    %     z_interp=[];
-    %     angle_xy=atan((goal(2)-z0(2))/(goal(1)-z0(1)));
-    %     angle_xz=atan((goal(3)-z0(3))/(goal(1)-z0(1)));
-    %     for j=1:N
-    %         x_interp=[x_interp z0(1)+cos(angle_xy)*j*delta];
-    %         y_interp=[y_interp z0(2)+sin(angle_xy)*j*delta];
-    %         z_interp=[z_interp z0(3)+sin(angle_xz)*j*delta];
-    %     end
-    
-    zN = [];
-    for k=1:N
-        zN(:,k) = [x_interp(k); y_interp(k); z_interp(k);  vCur];
-    end
+%     zN = [];
+%     for k=1:N
+%         zN(:,k) = [x_interp(k); y_interp(k); z_interp(k);  vCur];
+%     end
     
     % Define constraints on roll, pitch, and roll, pitch derivatives (not currently defining
     % constraint for velocity)
@@ -149,7 +72,7 @@ for M=1:1000
     zMin = [-15 -15 -10 -10]';
     
     disp(['Currently Solving for iter:', num2str(i)])
-    [feas, zOpt, uOpt, JOpt] = CFTOC(N, z0, zN, zMin, zMax, umin, umax, Ts);
+    [feas, zOpt, uOpt, JOpt] = CFTOC(N, z, zN, zMin, zMax, umin, umax, Ts);
     if feas == 0
         disp("ERROR IN YALMIP CFTOC");
         break;
@@ -159,7 +82,6 @@ for M=1:1000
     z = zOpt(:, 2);
     z_list = [z_list z];
     u_list = [u_list u];
-    z0 = z;
     
     i = i + 1;
 end
@@ -184,14 +106,14 @@ quadcopter_width = 2;
 P = 5*eye(3);
 Q = 10*eye(3);
 R = eye(4);
-VEL = 10*eye(3);
+VEL_weight = 100*eye(3);
 
 %define objective function
 objective=0;
 
 objective = (z(1:3,N+1) - zN(1:3,N))'*P*(z(1:3,N+1) - zN(1:3,N));
 for j=1:N
-    objective = objective + (z(1:3,j) - zN(1:3,N))'*Q*(z(1:3,j) - zN(1:3,N)) ; % removed velocity goal
+    objective = objective + (z(1:3,j) - zN(1:3,N))'*Q*(z(1:3,j) - zN(1:3,N)) - z(4:6,j)'*VEL_weight*z(4:6,j); % removed velocity goal
     objective = objective + u(:,j)'*R*u(:,j);
 end
 

@@ -48,14 +48,14 @@ interpWP = interp1(temp, WP, unique([temp(:)' linspace(0,temp(end),1430)]),'PCHI
 dd = interpWP;
 
 % delete last 3 waypoints to fix starting failure
-dd = dd(1:end-3,:);
+dd = dd(1:end-80,:);
 
 save 'WP_map.mat' dd
 % 
 figure, hold on
 % open('BayAreaMap.fig')
 plot3(WP(:,1),WP(:,2),WP(:,3),'.b-')
-plot3(interpWP(:,1),interpWP(:,2),interpWP(:,3),'.r-')
+plot3(dd(:,1),dd(:,2),dd(:,3),'.r-')
 
 
 grid on
