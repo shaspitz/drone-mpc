@@ -52,7 +52,7 @@ openloop_J = {};
 openloop_Ninterp = {};
 
 %%
-for M=1:1000
+for M=1:3500
     
 current_dis = vecnorm(waypoints-z(1:3), 2,1);
 [val,current_idx] = min(current_dis);
@@ -91,6 +91,7 @@ end
 openloop_z(M) = {zOpt};
 openloop_u(M) = {uOpt};
 openloop_J(M) = {JOpt};
+
 u = uOpt(:, 1);
 z = zOpt(:, 2);
 z_list = [z_list z];
@@ -109,9 +110,13 @@ end
 
 end
 
+save Z z_list
+save U u_list
+save OpenLoopPred openloop_z openloop_u openloop_J
 if feas ~= 0
     traj_plot(z_list, dd);
 end
+
 
 function [feas, zOpt, uOpt, JOpt] = CFTOC(N, z0, zN, zmin, zmax, umin, umax, Ts)
 

@@ -40,7 +40,7 @@ dd = dd(1:end-80,:);
 save 'WP_map.mat' dd
 
 figure, hold on
-plot3(WP(:,1),WP(:,2),WP(:,3),'.b-')
+%plot3(WP(:,1),WP(:,2),WP(:,3),'.b-')
 plot3(dd(:,1),dd(:,2),dd(:,3),'.r-')
 grid on
 title('Quadcopter Trajectoy')
