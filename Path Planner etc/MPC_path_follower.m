@@ -20,7 +20,7 @@ for i = 1:size(waypoints,2)-1
 end
 
 % Change this to test certain parts of the path
-Start_point = 1;
+Start_point = 1350;
 
 % Change this to set initial velocities
 Start_vel = [0; 0; 0]; %vx, vy, vz
@@ -51,11 +51,19 @@ openloop_u = {};
 openloop_J = {};
 openloop_Ninterp = {};
 
+wp_final = 0;
+counter = 0;
+
 %%
-for M=1:3500
+for M=1:10000
     
 current_dis = vecnorm(waypoints-z(1:3), 2,1);
 [val,current_idx] = min(current_dis);
+
+% Break if reached final waypoint
+if current_idx == size(dd,1)
+    break
+end
 
 umax = [9000 9000 9000 9000]';
 umin = [0 0 0 0]';
@@ -103,11 +111,15 @@ i = i + 1;
 dist_trav_des = dist_trav_des + v_ref*Ts;
 wp_dist = norm(waypoints(:, goal_idx-1) - waypoints(:, goal_idx));
 
-if dist_trav_des > wp_dist 
+if dist_trav_des > wp_dist && ~wp_final
     goal_idx = goal_idx + 1;
     dist_trav_des = 0;
 end
 
+% Stop propogating waypoints when reaching final (see wp_final flag above)
+if goal_idx == size(dd,1)
+    wp_final = 1;    
+end
 end
 
 save Z z_list

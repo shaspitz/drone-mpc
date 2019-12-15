@@ -25,7 +25,7 @@ close all;
 %  WP = 10*WP;
 
 temp = cat(1,0,cumsum(sqrt(sum(diff(WP,[],1).^2,2))));
-dd = interp1(temp, WP, unique([temp(:)' linspace(0,temp(end),800)]),'cubic');
+dd = interp1(temp, WP, unique([temp(:)' linspace(0,temp(end),800)]),'PCHIP');
 
 figure, hold on
 % plot3(WP(:,1),WP(:,2),WP(:,3),'.b-')

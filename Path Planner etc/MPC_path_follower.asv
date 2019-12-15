@@ -51,8 +51,11 @@ openloop_u = {};
 openloop_J = {};
 openloop_Ninterp = {};
 
+wp_final = 0;
+counter = 0;
+
 %%
-for M=1:1000
+for M=1:10000
     
 current_dis = vecnorm(waypoints-z(1:3), 2,1);
 [val,current_idx] = min(current_dis);
@@ -103,16 +106,24 @@ i = i + 1;
 dist_trav_des = dist_trav_des + v_ref*Ts;
 wp_dist = norm(waypoints(:, goal_idx-1) - waypoints(:, goal_idx));
 
-if dist_trav_des > wp_dist 
+if dist_trav_des > wp_dist && ~wp_final
     goal_idx = goal_idx + 1;
     dist_trav_des = 0;
 end
 
+% break at final goal index
+if goal_idx == size(dd,1)
+    wp_final = 1;
+    counter = counter + 1;
+    if counter == N
+        break
+    end
+end
 end
 
 save Z z_list
 save U u_list
-save 
+save OpenLoopPred openloop_z openloop_u openloop_J
 if feas ~= 0
     traj_plot(z_list, dd);
 end
