@@ -45,12 +45,9 @@ WP = 5000/700*WP;
 
 temp = cat(1,0,cumsum(sqrt(sum(diff(WP,[],1).^2,2))));
 interpWP = interp1(temp, WP, unique([temp(:)' linspace(0,temp(end),1430)]),'PCHIP');
-dd = interpWP;
+dd = interpWP
 
-% delete last 3 waypoints to fix starting failure
-dd = dd(1:end-3,:);
-
-save 'WP_map.mat' dd
+save WP
 % 
 figure, hold on
 % open('BayAreaMap.fig')

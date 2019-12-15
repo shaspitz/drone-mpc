@@ -3,27 +3,7 @@ function [] = traj_plot(z_list, WP)
 % This scripts generates the interpolated data for the reference trajectory
 close all; 
 
-<<<<<<< HEAD
-WP =...
-    [0 0 0;
-    25 0 25;
-    40 0 50;
-    60 0 50;
-    80 0 25;
-    100 0 0;
-    80 30 25;
-    60 40 50;
-    40 60 50;
-    20 80 50;
-     0 120 0; 
-    -5 100 25];
-%     -5 80 30;
-%    -10 60 50;
-%    -10 40 50;
-%    -10 25 25;
-%      0  0 0];
- WP = 4*WP;
-=======
+
 % WP =...
 %     [0 0 0;
 %     25 0 25;

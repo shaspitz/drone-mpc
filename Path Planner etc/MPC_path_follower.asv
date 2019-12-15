@@ -184,14 +184,14 @@ quadcopter_width = 2;
 P = 5*eye(3);
 Q = 10*eye(3);
 R = eye(4);
-VEL_weight = 100*eye(3);
+VEL = 10*eye(3);
 
 %define objective function
 objective=0;
 
 objective = (z(1:3,N+1) - zN(1:3,N))'*P*(z(1:3,N+1) - zN(1:3,N));
 for j=1:N
-    objective = objective + (z(1:3,j) - zN(1:3,N))'*Q*(z(1:3,j) - zN(1:3,N)) - z(4:6,j)'*VEL_weight*z(4:6,j); % removed velocity goal
+    objective = objective + (z(1:3,j) - zN(1:3,N))'*Q*(z(1:3,j) - zN(1:3,N)) ; % removed velocity goal
     objective = objective + u(:,j)'*R*u(:,j);
 end
 
