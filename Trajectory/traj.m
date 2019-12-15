@@ -16,11 +16,13 @@ close all; clc; clear all;
 % grid on
 % axis square
 
+load('exportWP')
+
 for i = 0:length(exportWP)-1
     WP(i+1,:) = exportWP(length(exportWP)-i).Position
 end
 
-for i = 1:length(exportWP)
+for i = 1:length(exportWP)-1
     distWP(i) = sqrt((WP(i+1,1)-WP(i,1))^2+(WP(i+1,2)-WP(i,2))^2);
 end
 
