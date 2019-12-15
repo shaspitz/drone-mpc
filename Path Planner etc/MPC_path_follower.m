@@ -20,7 +20,7 @@ for i = 1:size(waypoints,2)-1
 end
 
 % Change this to test certain parts of the path
-Start_point = 1350;
+Start_point = 1;
 
 % Change this to set initial velocities
 Start_vel = [0; 0; 0]; %vx, vy, vz
@@ -33,10 +33,10 @@ z_list = z;
 u_list = [];
 
 % set reference velocity
-v_ref = 50;
+v_ref = 40;
 
 % Define horizon
-N = 35;
+N = 25;
 i = 0;
 
 % Initialize idx
@@ -73,14 +73,14 @@ current = [waypoints(:, current_idx)];
 goal = [waypoints(:, goal_idx)];
 disp(['Goal Index:', num2str(goal_idx)])
 
-[pointsInterp] = Ninterp(waypoints, current_idx, goal_idx, v_ref, Ts, N);
+[pointsInterp] = Ninterp(waypoints, current_idx, goal_idx, v_ref, Ts, N+1);
 openloop_Ninterp(M) = {pointsInterp};
 x_interp = pointsInterp(:,1);
 y_interp = pointsInterp(:,2);
 z_interp = pointsInterp(:,3);
 
 zN = [];
-for k=1:N
+for k=1:N+1
     zN(:,k) = [x_interp(k); y_interp(k); z_interp(k);  v_ref];
 end
     
@@ -151,9 +151,9 @@ VEL_weight = 100*eye(3);
 %define objective function
 objective=0;
 
-objective = (z(1:3,N+1) - zN(1:3,N))'*P*(z(1:3,N+1) - zN(1:3,N));
+objective = (z(1:3,N+1) - zN(1:3,N+1))'*P*(z(1:3,N+1) - zN(1:3,N+1));
 for j=1:N
-    objective = objective + (z(1:3,j) - zN(1:3,N))'*Q*(z(1:3,j) - zN(1:3,N)) - z(4:6,j)'*VEL_weight*z(4:6,j);
+    objective = objective + (z(1:3,j) - zN(1:3,N+1))'*Q*(z(1:3,j) - zN(1:3,N+1)) - z(4:6,j)'*VEL_weight*z(4:6,j);
     objective = objective + u(:,j)'*R*u(:,j);
 end
 
@@ -169,7 +169,7 @@ for i = 1:N
     constraints = [constraints z(:,i+1) == linearDynamicsQuadcopterDiscrete(z(:,i), u(1,i), u(2,i), u(3,i), u(4,i), Ts)];
 end
 for k=1:N+1
-%     constraints=[constraints zmin(1:2)<=z(7:8,k)<=zmax(1:2) zmin(3:4)<=z(10:11,k)<=zmax(3:4)];
+     constraints=[constraints zmin(1:2)<=z(7:8,k)<=zmax(1:2) zmin(3:4)<=z(10:11,k)<=zmax(3:4)];
 end
 constraints=[constraints z(1:3,N+1) == zN(1:3,N)];
 
