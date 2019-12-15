@@ -45,6 +45,12 @@ goal_idx = Start_point + 1;
 
 dist_trav_des = 0;
 
+% Define cell arrays to store open loop trajectories
+openloop_z = {};
+openloop_u = {};
+openloop_J = {};
+openloop_Ninterp = {};
+
 %%
 for M=1:1000
     
@@ -60,7 +66,7 @@ goal = [waypoints(:, goal_idx)];
 disp(['Goal Index:', num2str(goal_idx)])
 
 [pointsInterp] = Ninterp(waypoints, current_idx, goal_idx, v_ref, Ts, N);
-
+openloop_Ninterp(M) = {pointsInterp};
 x_interp = pointsInterp(:,1);
 y_interp = pointsInterp(:,2);
 z_interp = pointsInterp(:,3);
@@ -81,7 +87,10 @@ if feas == 0
     disp("ERROR IN YALMIP CFTOC");
     break;
 end
-    
+
+openloop_z(M) = {zOpt};
+openloop_u(M) = {uOpt};
+openloop_J(M) = {JOpt};
 u = uOpt(:, 1);
 z = zOpt(:, 2);
 z_list = [z_list z];
