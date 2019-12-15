@@ -28,14 +28,15 @@ WP(:,3) = ...
     100;
     100;
     0];
+
+% Offset final waypoint for error reasons
+WP(end,1) = WP(end,1) + 10;
+
 WP = 5000/700*WP;
 
 temp = cat(1,0,cumsum(sqrt(sum(diff(WP,[],1).^2,2))));
 interpWP = interp1(temp, WP, unique([temp(:)' linspace(0,temp(end),1430)]),'PCHIP');
 dd = interpWP;
-
-% delete last 80 waypoints to fix starting failure
-dd = dd(1:end-80,:);
 
 save 'WP_map.mat' dd
 
