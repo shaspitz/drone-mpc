@@ -25,19 +25,21 @@ Start_point = 1;
 % Change this to set initial velocities
 Start_vel = [0; 0; 0]; %vx, vy, vz
 
+iter = 10000;
+
+z_list = zeros(12,iter);
+u_list = zeros(4,iter);
+
 %set initial localization
 z = zeros(12,1);
 z(1:3) = dd(Start_point,:);
 z(4:6) = Start_vel;
-z_list = z;
-u_list = [];
 
 % set reference velocity
 v_ref = 50;
 
 % Define horizon
 N = 35;
-i = 0;
 
 % Initialize idx
 current_idx = Start_point;
@@ -46,16 +48,19 @@ goal_idx = Start_point + 1;
 dist_trav_des = 0;
 
 % Define cell arrays to store open loop trajectories
-openloop_z = {};
-openloop_u = {};
-openloop_J = {};
-openloop_Ninterp = {};
+openloop_z = cell(1,iter);
+openloop_u = cell(1,iter);
+openloop_J = cell(1,iter);
+openloop_Ninterp = cell(1,iter);
+
+z_list = zeros(12,iter);
+u_list = zeros(4,iter);
 
 wp_final = 0;
 counter = 0;
 
 %%
-for M=1:10000
+for M=1:iter
     
 current_dis = vecnorm(waypoints-z(1:3), 2,1);
 [val,current_idx] = min(current_dis);
@@ -74,7 +79,7 @@ goal = [waypoints(:, goal_idx)];
 disp(['Goal Index:', num2str(goal_idx)])
 
 [pointsInterp] = Ninterp(waypoints, current_idx, goal_idx, N+1);
-openloop_Ninterp(M) = {pointsInterp};
+openloop_Ninterp{M} = pointsInterp;
 x_interp = pointsInterp(:,1);
 y_interp = pointsInterp(:,2);
 z_interp = pointsInterp(:,3);
@@ -89,23 +94,22 @@ end
 zMax = [rad2deg(15) rad2deg(15) rad2deg(10) rad2deg(10)]';
 zMin = [rad2deg(-15) rad2deg(-15) rad2deg(-10) rad2deg(-10)]';
 
-disp(['Currently Solving for iter:', num2str(i)])
+disp(['Currently Solving for iter:', num2str(M)])
 [feas, zOpt, uOpt, JOpt] = CFTOC(N, z, zN, zMin, zMax, umin, umax, Ts);
 if feas == 0
     disp("ERROR IN YALMIP CFTOC");
     break;
 end
 
-openloop_z(M) = {zOpt};
-openloop_u(M) = {uOpt};
-openloop_J(M) = {JOpt};
+openloop_z{M} = zOpt;
+openloop_u{M} = uOpt;
+openloop_J{M} = JOpt;
 
 u = uOpt(:, 1);
 z = zOpt(:, 2);
-z_list = [z_list z];
-u_list = [u_list u];
 
-i = i + 1;
+z_list(:,M) = z;
+u_list(:,M) = u;
 
 % propogate goal_idx
 dist_trav_des = dist_trav_des + v_ref*Ts;
@@ -126,7 +130,7 @@ save Z z_list
 save U u_list
 save OpenLoopPred openloop_z openloop_u openloop_J
 if feas ~= 0
-    traj_plot(z_list, dd);
+    traj_plot(z_list(:,1:M), dd)
 end
 
 
