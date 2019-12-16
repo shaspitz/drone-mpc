@@ -1,13 +1,25 @@
 function Y=trajectory_simulation()
-%load('U.mat')
 load('Z.mat')
-%load('OpenLoopPred.mat')
-openfig('BayAreaMap_refTraj.fig') 
+fig=openfig('BayAreaMap3D.fig');
+hold on
 legend off
-    hold on
-for i=1:length(z_list)    
-    g=plot3(z_list(1,:)/7, z_list(2,:)/7, z_list(3,:)/7,'bo-', 'linewidth', 2)
+for i=1:length(z_list)
+    g=plot3(z_list(1,i)/(5000/700), z_list(2,i)/(5000/700), z_list(3,i)/(5000/700),'k.-', 'MarkerSize', 5)
+    h=plot3(z_list(1,i)/(5000/700), z_list(2,i)/(5000/700), z_list(3,i)/(5000/700),'g*', 'MarkerSize', 10)
     pause(0.1)
+    delete (h)
 end
-    X=1;
+X=1;
+
+
+openfig('BayAreaMap2D.fig');
+hold on
+legend off
+for i=1:length(z_list)
+    g=plot3(z_list(1,i)/(5000/700), z_list(2,i)/(5000/700), z_list(3,i)/(5000/700),'k.-', 'MarkerSize', 5)
+    h=plot3(z_list(1,i)/(5000/700), z_list(2,i)/(5000/700), z_list(3,i)/(5000/700),'g*', 'MarkerSize', 10)
+    pause(0.1)
+    delete (h)
+end
+X=1;
 end
