@@ -33,7 +33,7 @@ z_list = z;
 u_list = [];
 
 % set reference velocity
-v_ref = 40;
+v_ref = 50;
 
 % Define horizon
 N = 25;
@@ -73,7 +73,7 @@ current = [waypoints(:, current_idx)];
 goal = [waypoints(:, goal_idx)];
 disp(['Goal Index:', num2str(goal_idx)])
 
-[pointsInterp] = Ninterp(waypoints, current_idx, goal_idx, v_ref, Ts, N+1);
+[pointsInterp] = Ninterp(waypoints, current_idx, goal_idx, N+1);
 openloop_Ninterp(M) = {pointsInterp};
 x_interp = pointsInterp(:,1);
 y_interp = pointsInterp(:,2);
@@ -86,8 +86,8 @@ end
     
 % Define constraints on roll, pitch, and roll, pitch derivatives (not currently defining
 % constraint for velocity)
-zMax = [15 15 10 10]';
-zMin = [-15 -15 -10 -10]';
+zMax = [rad2deg(15) rad2deg(15) rad2deg(10) rad2deg(10)]';
+zMin = [rad2deg(-15) rad2deg(-15) rad2deg(-10) rad2deg(-10)]';
 
 disp(['Currently Solving for iter:', num2str(i)])
 [feas, zOpt, uOpt, JOpt] = CFTOC(N, z, zN, zMin, zMax, umin, umax, Ts);
@@ -144,9 +144,9 @@ tube_radius = 50;
 quadcopter_width = 2;
 
 P = eye(3);
-Q = 10*eye(3);
-R = eye(4);
-VEL_weight = 100*eye(3);
+Q = eye(3);
+R = 10*eye(4);
+VEL_weight = eye(3);
 
 %define objective function
 objective=0;
@@ -169,7 +169,7 @@ for i = 1:N
     constraints = [constraints z(:,i+1) == linearDynamicsQuadcopterDiscrete(z(:,i), u(1,i), u(2,i), u(3,i), u(4,i), Ts)];
 end
 for k=1:N+1
-     constraints=[constraints zmin(1:2)<=z(7:8,k)<=zmax(1:2) zmin(3:4)<=z(10:11,k)<=zmax(3:4)];
+%      constraints=[constraints zmin(1:2)<=z(7:8,k)<=zmax(1:2) zmin(3:4)<=z(10:11,k)<=zmax(3:4)];
 end
 constraints=[constraints z(1:3,N+1) == zN(1:3,N)];
 
@@ -191,7 +191,7 @@ end
 
 end
 
-function [dd] = Ninterp(waypoints, current_idx, goal_idx, vCur, Ts, N)
+function [dd] = Ninterp(waypoints, current_idx, goal_idx, N)
 
 WP = waypoints(:,current_idx:goal_idx)';
 
