@@ -36,7 +36,7 @@ u_list = [];
 v_ref = 50;
 
 % Define horizon
-N = 25;
+N = 35;
 i = 0;
 
 % Initialize idx
