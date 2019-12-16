@@ -14,12 +14,9 @@ iter = 10000;
 % Add path to old data
 addpath('C:\Users\shawn\Desktop\Advanced-Control-Design-Final-Project\Data\Partial Run 725 Sunday')
 load('last_state.mat')
-% load('OpenLoopPred.mat') % changed format of ol traj
+% load('OpenLoopPred.mat') % OL is saved in new way so this data will be separated
 load('U.mat')
 load('Z.mat')
-
-% Change this to test certain parts of the path
-Start_point = 1;
 
 % Hardcode Start idx
 goal_idx = 566;
@@ -31,7 +28,7 @@ n = n+1;
 % initialize state
 z = last_state;
 
-% Initialize z_list and u_list
+% Initialize remainder of z_list and u_list
 z_list(:,n+1:iter) = 0;
 u_list(:,n+1:iter) = 0;
 
