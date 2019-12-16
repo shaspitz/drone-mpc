@@ -48,7 +48,7 @@ ds3 = v3;
 
 % Derivative of velocity
 dv1 = theta * g;
-dv2 = -phi * g;
+dv2 = -1*phi * g;
 dv3 = deltacSigma/m;
 
 % Derivative of orientation using Euler Angles
