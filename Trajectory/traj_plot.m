@@ -29,8 +29,8 @@ dd = interp1(temp, WP, unique([temp(:)' linspace(0,temp(end),800)]),'PCHIP');
 
 figure, hold on
 % plot3(WP(:,1),WP(:,2),WP(:,3),'.b-')
-plot3(dd(:,1),dd(:,2),dd(:,3),'.r-')
-plot3(z_list(1,:),z_list(2,:),z_list(3,:), 'b', 'linewidth', 2)
+plot3(dd(:,2),dd(:,1),dd(:,3),'.r-')
+plot3(z_list(2,:),z_list(1,:),z_list(3,:), 'b', 'linewidth', 2)
 
 grid on
 title('Waypoints vs Quadcopter Trajectoy')

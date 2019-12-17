@@ -42,7 +42,7 @@ save 'WP_map.mat' dd
 
 figure, hold on
 %plot3(WP(:,1),WP(:,2),WP(:,3),'.b-')
-plot3(dd(:,1),dd(:,2),dd(:,3),'.r-')
+plot3(dd(:,2),dd(:,1),dd(:,3),'.r-')
 grid on
 title('Quadcopter Trajectoy (Interpolated)')
 axis image, view(3),
