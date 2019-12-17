@@ -83,6 +83,6 @@ function [x,y,z]=tubeplot(curve,r,n,ct)
   
   %... and plot:
   %if nargout<3, 
-  s = surf(x,y,z,'FaceAlpha',0.25,'FaceColor',[0.9525 0.217  0.276]); s.EdgeColor = 'none';  
+  s = surf(x,y,z,'FaceAlpha',0.15,'FaceColor',[0.9525 0.217  0.276]); s.EdgeColor = 'none';  
 %end;
   
