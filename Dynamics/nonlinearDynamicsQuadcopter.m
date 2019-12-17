@@ -45,7 +45,7 @@ ds2 = v2;
 ds3 = v3;
 
 % Derivative of velocity
-dv = (cSigma/m) * TM * [0;0;1] + [0; 0; -g];
+dv = (cSigma/m) * TM' * [0;0;1] + [0; 0; -1*g];
 dv1 = dv(1);
 dv2 = dv(2);
 dv3 = dv(3);
@@ -57,7 +57,7 @@ dtheta = derivEulerAngles(2);
 dpsi   = derivEulerAngles(3);
 
 % Derivative of angular velocity
-dw = [n1/Jxx; n2/Jxx; n3/Jzz] + ((Jxx - Jzz)/Jxx) * [q*r; -p*r; 0];
+dw = [n1/Jxx; n2/Jxx; n3/Jzz] + ((Jxx - Jzz)/Jxx) * [q*r; -1*p*r; 0];
 dp = dw(1);
 dq = dw(2);
 dr = dw(3);

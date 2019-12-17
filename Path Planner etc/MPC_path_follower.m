@@ -25,19 +25,21 @@ Start_point = 1;
 % Change this to set initial velocities
 Start_vel = [0; 0; 0]; %vx, vy, vz
 
+iter = 10000;
+
+z_list = zeros(12,iter);
+u_list = zeros(4,iter);
+
 %set initial localization
 z = zeros(12,1);
 z(1:3) = dd(Start_point,:);
 z(4:6) = Start_vel;
-z_list = z;
-u_list = [];
 
 % set reference velocity
 v_ref = 50;
 
 % Define horizon
 N = 35;
-i = 0;
 
 % Initialize idx
 current_idx = Start_point;
@@ -46,16 +48,27 @@ goal_idx = Start_point + 1;
 dist_trav_des = 0;
 
 % Define cell arrays to store open loop trajectories
-openloop_z = {};
-openloop_u = {};
-openloop_J = {};
-openloop_Ninterp = {};
+openloop_z = cell(1,iter);
+openloop_u = cell(1,iter);
+openloop_J = cell(1,iter);
+openloop_Ninterp = cell(1,iter);
+
+z_list = zeros(12,iter);
+u_list = zeros(4,iter);
+
+wp_final = 0;
+counter = 0;
 
 %%
-for M=1:3500
+for M=1:iter
     
 current_dis = vecnorm(waypoints-z(1:3), 2,1);
 [val,current_idx] = min(current_dis);
+
+% Break if reached final waypoint
+if current_idx == size(dd,1)
+    break
+end
 
 umax = [9000 9000 9000 9000]';
 umin = [0 0 0 0]';
@@ -65,56 +78,59 @@ current = [waypoints(:, current_idx)];
 goal = [waypoints(:, goal_idx)];
 disp(['Goal Index:', num2str(goal_idx)])
 
-[pointsInterp] = Ninterp(waypoints, current_idx, goal_idx, v_ref, Ts, N);
-openloop_Ninterp(M) = {pointsInterp};
+[pointsInterp] = Ninterp(waypoints, current_idx, goal_idx, N+1);
+openloop_Ninterp{M} = pointsInterp;
 x_interp = pointsInterp(:,1);
 y_interp = pointsInterp(:,2);
 z_interp = pointsInterp(:,3);
 
 zN = [];
-for k=1:N
+for k=1:N+1
     zN(:,k) = [x_interp(k); y_interp(k); z_interp(k);  v_ref];
 end
     
 % Define constraints on roll, pitch, and roll, pitch derivatives (not currently defining
 % constraint for velocity)
-zMax = [15 15 10 10]';
-zMin = [-15 -15 -10 -10]';
+zMax = [rad2deg(15) rad2deg(15) rad2deg(10) rad2deg(10)]';
+zMin = [rad2deg(-15) rad2deg(-15) rad2deg(-10) rad2deg(-10)]';
 
-disp(['Currently Solving for iter:', num2str(i)])
+disp(['Currently Solving for iter:', num2str(M)])
 [feas, zOpt, uOpt, JOpt] = CFTOC(N, z, zN, zMin, zMax, umin, umax, Ts);
 if feas == 0
     disp("ERROR IN YALMIP CFTOC");
     break;
 end
 
-openloop_z(M) = {zOpt};
-openloop_u(M) = {uOpt};
-openloop_J(M) = {JOpt};
+openloop_z{M} = zOpt;
+openloop_u{M} = uOpt;
+openloop_J{M} = JOpt;
 
 u = uOpt(:, 1);
 z = zOpt(:, 2);
-z_list = [z_list z];
-u_list = [u_list u];
 
-i = i + 1;
+z_list(:,M) = z;
+u_list(:,M) = u;
 
 % propogate goal_idx
 dist_trav_des = dist_trav_des + v_ref*Ts;
 wp_dist = norm(waypoints(:, goal_idx-1) - waypoints(:, goal_idx));
 
-if dist_trav_des > wp_dist 
+if dist_trav_des > wp_dist && ~wp_final
     goal_idx = goal_idx + 1;
     dist_trav_des = 0;
 end
 
+% Stop propogating waypoints when reaching final (see wp_final flag above)
+if goal_idx == size(dd,1)
+    wp_final = 1;    
+end
 end
 
 save Z z_list
 save U u_list
 save OpenLoopPred openloop_z openloop_u openloop_J
 if feas ~= 0
-    traj_plot(z_list, dd);
+    traj_plot(z_list(:,1:M), dd)
 end
 
 
@@ -132,16 +148,16 @@ tube_radius = 50;
 quadcopter_width = 2;
 
 P = eye(3);
-Q = 10*eye(3);
-R = eye(4);
-VEL_weight = 100*eye(3);
+Q = eye(3);
+R = 10*eye(4);
+VEL_weight = eye(3);
 
 %define objective function
 objective=0;
 
-objective = (z(1:3,N+1) - zN(1:3,N))'*P*(z(1:3,N+1) - zN(1:3,N));
+objective = (z(1:3,N+1) - zN(1:3,N+1))'*P*(z(1:3,N+1) - zN(1:3,N+1));
 for j=1:N
-    objective = objective + (z(1:3,j) - zN(1:3,N))'*Q*(z(1:3,j) - zN(1:3,N)) - z(4:6,j)'*VEL_weight*z(4:6,j);
+    objective = objective + (z(1:3,j) - zN(1:3,N+1))'*Q*(z(1:3,j) - zN(1:3,N+1)) - z(4:6,j)'*VEL_weight*z(4:6,j);
     objective = objective + u(:,j)'*R*u(:,j);
 end
 
@@ -157,7 +173,7 @@ for i = 1:N
     constraints = [constraints z(:,i+1) == linearDynamicsQuadcopterDiscrete(z(:,i), u(1,i), u(2,i), u(3,i), u(4,i), Ts)];
 end
 for k=1:N+1
-%     constraints=[constraints zmin(1:2)<=z(7:8,k)<=zmax(1:2) zmin(3:4)<=z(10:11,k)<=zmax(3:4)];
+%      constraints=[constraints zmin(1:2)<=z(7:8,k)<=zmax(1:2) zmin(3:4)<=z(10:11,k)<=zmax(3:4)];
 end
 constraints=[constraints z(1:3,N+1) == zN(1:3,N)];
 
@@ -179,7 +195,7 @@ end
 
 end
 
-function [dd] = Ninterp(waypoints, current_idx, goal_idx, vCur, Ts, N)
+function [dd] = Ninterp(waypoints, current_idx, goal_idx, N)
 
 WP = waypoints(:,current_idx:goal_idx)';
 
